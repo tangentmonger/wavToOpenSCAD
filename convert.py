@@ -2,6 +2,8 @@ import wave
 import struct
 from itertools import zip_longest
 
+""" General idea: read a 5 channel wav file from the EEG, collate the values from each channel, scale and chunk the values, and generate OpenSCAD code for a representation of the data"""
+
 
 def grouper(iterable, n, fillvalue=None):
     "Collect data into fixed-length chunks or blocks"
@@ -12,11 +14,10 @@ def grouper(iterable, n, fillvalue=None):
 
 
 def scale(raw, scale_min, scale_max, n):
-
-    print(raw)
+    """Given a list of raw values, scale the values from scale_min to scale_max and build an iterator that breaks up the list into n chunks"""
+    #TODO: doesn't handle data with outliers very well
     scale_range = scale_max - scale_min
     max_value = max(raw)
-    print(max_value)
     #min_value = min(filter(lambda a: a>0, raw))
     min_value = min( raw)
     range_value = max_value - min_value
@@ -26,37 +27,31 @@ def scale(raw, scale_min, scale_max, n):
     return points
 
 def get_average(grouper):
+    """Calculate the average of the values in the next group"""
     group = next(grouper)
     return  sum(point for point in group) / len(group)
         
 
        
 
-w = wave.open("D20140510_184849_137_2-BETA_cheryl.wav","r")
-print(w)
+w = wave.open("cheryl.wav","r")
 sample_width = w.getsampwidth()
 print(sample_width)
 print(w.getnchannels())
 
-max_x = 120 #millimetres
-max_y = 200
-min_y = 5
+max_x = 120 #millimetres (each slice of the mountain is 1mm)
+max_y = 200 #millimetres
+min_y = 5   #millimetres
 range_y = max_y - min_y
 
 data = []
-
-outlier = 32568 #by inspection
-
-#print(struct.unpack_from("<H", w.readframes(w.getnframes())))
-
 try:
     for x in range(w.getnframes()):
+        #assumption: this was a 5-channel wav file
         values = struct.unpack("@5h", w.readframes(1))
-        #print(values)
-        #value = values[0]
-        #if value < outlier:
         data.append(values)
 except:
+    #might be an unfinished frame, we don't care
     pass
 
 data0, data1, data2, data3, data4 = zip(*data)
@@ -76,7 +71,8 @@ with open("output.scad", "w") as output:
         avg4 = get_average(ndata4)
         
         
-        
+        #early version that produced a flat shape representing one channel
         #print("translate([%d,%d,0]) cube([%d,1,1]);" % ((avg0/2) * -1, x, avg0), file=output)
-        #linear_extrude(height = fanwidth, center = true, convexity = 10)
+        
+        #produce a "mountain" type shape representing all 5 channels
         print("translate([%d,%d,0]) rotate([90,0,0]) linear_extrude(height=1) polygon(points=[[0,0], [%d,0], [%d,%d], [%d,%d], [%d,%d], [0,%d]]);" % ((avg0/2) * -1, x, avg0, avg0, avg1, avg0*.6, avg2, avg0*.3,avg3,avg4 ), file=output)
