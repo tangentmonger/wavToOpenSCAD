@@ -75,17 +75,17 @@ def pairs(lst):
 
 data = get_data_points_from_wav_channel("cheryl.wav", 1)
 data = lstrip_data(data, 0)
-data = compress_data_points(data, 500)
+data = compress_data_points(data, 400)
 data = normalise_data_points(data, 0, 50)
 #print(min(data), max(data), len(data))
 
 
-THICKNESS = 2.0 #mm
-BASE_HEIGHT = 2 #mm
+THICKNESS = 4.0 #mm
+BASE_HEIGHT = 10 #mm
 DATA_HEIGHT = 5.0 #mm
-START_ANGLE = -15.0 #degrees
-ANGLE_CHANGE = 1 #percentage change
-ANGLE_DELTA =  0.01 # percentage change
+START_ANGLE = 10 #degrees
+ANGLE_CHANGE = -0.1 #percentage change
+ANGLE_DELTA = 0  # percentage change
 SECTION_WIDTH = 5 #mm
 
 
@@ -101,15 +101,25 @@ for index, pair in enumerate(pairs(data)):
     points.append("[%.2f, %.2f]" % (0, BASE_HEIGHT + pair[0]))
     points.append("[%.2f, %.2f]" % (SECTION_WIDTH, BASE_HEIGHT + pair[1]))
     points.append("[%.2f, %.2f]" % (SECTION_WIDTH, 0))
-    objects.append("translate([%.2f, %.2f, 0]) rotate([90, 0, %.2f]) linear_extrude(height=%s) polygon([%s]);" % (last_x, last_y, angle, THICKNESS, ",".join(points)))
+    shift = ""
+    shift_back = ""
+    match_y = THICKNESS
+    if next_angle > 0:
+        shift = "translate([0, %d, 0])" % THICKNESS
+        #shift_back = "translate([0,  %d, 0])" % -THICKNESS
+        match_y = 0.0
+        pass
+    objects.append("%s translate([%.2f, %.2f, 0]) rotate([0,0,%.2f]) %s rotate([90, 0, 0])  linear_extrude(height=%s) polygon([%s]);" % (shift_back, last_x, last_y,  angle, shift, THICKNESS, ",".join(points)))
     
-    change_x = (SECTION_WIDTH * math.cos(math.radians(angle))) #+ (0 * sinθ)
-    change_y = (SECTION_WIDTH * math.sin(math.radians(angle))) #+ (0 * cosθ) 
+
+
+    change_x = ((SECTION_WIDTH) * math.cos(math.radians(angle))) - (match_y * math.sin(math.radians(angle)))
+    change_y = ((SECTION_WIDTH) * math.sin(math.radians(angle))) - (match_y * math.cos(math.radians(angle))) 
     last_x += change_x
-    last_y += change_y
+    last_y += change_y 
     
     ANGLE_CHANGE += ANGLE_DELTA
-    next_angle -= ANGLE_CHANGE
+    next_angle += ANGLE_CHANGE
     angle = (angle + next_angle) % 360
 
 def divide_into_two_unions(objects):
