@@ -113,11 +113,11 @@ for index, value in enumerate(data):
 with open("output.scad", "w") as output:
     for i in range(0,359,math.ceil(360/7)):
         print("rotate([0,0,%d]) { linear_extrude(height=%s) polygon([%s]);" % (i, THICKNESS, ",".join(points)), file=output)
-        print("difference() {translate([%d, 0, 0]) cylinder(h=%d, r=%d);" % (len(data), THICKNESS, MIN_SPINE * 3), file=output)
+        print("difference() {translate([%d, 0, 0]) cylinder(h=%d, r=%d);" % (len(data) + MIN_SPINE, THICKNESS, MIN_SPINE * 3), file=output)
         if i==0:
-            print("} translate([%d, 0, 0]) cylinder(h=%d, r=%d);" % (len(data), THICKNESS*10, MIN_SPINE), file=output)
+            print("} translate([%d, 0, 0]) cylinder(h=%d, r=%d);" % (len(data) + MIN_SPINE, THICKNESS*10, MIN_SPINE), file=output)
         else:
-            print("translate([%d, 0, 0]) cylinder(h=%d, r=%d); }" % (len(data), THICKNESS, MIN_SPINE * 1.1), file=output)
+            print("translate([%d, 0, 0]) cylinder(h=%d, r=%d); }" % (len(data) + MIN_SPINE, THICKNESS, MIN_SPINE * 1.2), file=output)
 
         print ("}", file=output)
     
